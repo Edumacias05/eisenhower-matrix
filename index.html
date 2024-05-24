@@ -80,6 +80,9 @@
             text-align: center;
             margin-top: 20px;
         }
+        .filter-buttons {
+            margin-bottom: 10px;
+        }
         .filter-buttons button {
             margin-right: 10px;
             background-color: #27ae60;
@@ -124,10 +127,12 @@
             <div class="filter-buttons">
                 <button onclick="filterByImportance('Importante')">Importante</button>
                 <button onclick="filterByImportance('No importante')">No Importante</button>
+            </div>
+            <div class="filter-buttons">
                 <button onclick="filterByUrgency('Urgente')">Urgente</button>
                 <button onclick="filterByUrgency('No urgente')">No Urgente</button>
-                <button onclick="showAllTasks()">Mostrar Todas</button>
             </div>
+            <button onclick="showAllTasks()">Mostrar Todas</button>
         </div>
         <form id="task-form" style="display: none;">
             <label for="task-name">Tarea:</label>
@@ -160,7 +165,7 @@
                 <option value="none">No repetir</option>
             </select>
 
-            <button type="submit">Agregar</button>
+            <button type="button" onclick="addTask()">Agregar</button>
             <button type="button" onclick="hideForm()">Cancelar</button>
         </form>
         <table id="eisenhower-matrix">
@@ -183,7 +188,8 @@
         let tasks = [];
 
         function renderTable() {
-            const tableBody = document.getElementById("task-list");
+            const tableBody =
+ document.getElementById("task-list");
             tableBody.innerHTML = "";
 
             tasks.forEach((task, index) => {
@@ -205,7 +211,6 @@
             });
         }
 
-        function filter
         function filterByImportance(importance) {
             const filteredTasks = tasks.filter(task => task.importance === importance);
             renderTable(filteredTasks);
@@ -247,9 +252,7 @@
             }
         }
 
-        document.getElementById('task-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-
+        function addTask() {
             const taskName = document.getElementById('task-name').value;
             const importance = document.getElementById('importance').value;
             const urgency = document.getElementById('urgency').value;
@@ -285,7 +288,7 @@
                     }
                 }, 1000 * 60 * 60 * 24);
             }
-        });
+        }
     </script>
 </body>
 </html>
