@@ -21,6 +21,8 @@
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
         }
         h1 {
             text-align: center;
@@ -85,6 +87,33 @@
         .filter-buttons button:hover {
             background-color: #2ecc71;
         }
+        .task-row td {
+            position: relative;
+        }
+        .task-actions {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            display: none;
+        }
+        .task-row:hover .task-actions {
+            display: block;
+        }
+        .task-actions button {
+            background-color: transparent;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        .task-actions button:hover {
+            color: #3498db;
+        }
+        .task-completed {
+            text-decoration: line-through;
+            color: #95a5a6;
+        }
     </style>
 </head>
 <body>
@@ -93,10 +122,10 @@
         <div class="action-buttons">
             <button onclick="showForm()">Agregar Tarea</button>
             <div class="filter-buttons">
-                <button onclick="filterTasks('I')">Cuadrante I</button>
-                <button onclick="filterTasks('II')">Cuadrante II</button>
-                <button onclick="filterTasks('III')">Cuadrante III</button>
-                <button onclick="filterTasks('IV')">Cuadrante IV</button>
+                <button onclick="filterByImportance('Importante')">Importante</button>
+                <button onclick="filterByImportance('No importante')">No Importante</button>
+                <button onclick="filterByUrgency('Urgente')">Urgente</button>
+                <button onclick="filterByUrgency('No urgente')">No Urgente</button>
                 <button onclick="showAllTasks()">Mostrar Todas</button>
             </div>
         </div>
@@ -122,6 +151,15 @@
             <label for="notes">Notas:</label>
             <textarea id="notes"></textarea>
 
+            <label for="repeat">Repetir:</label>
+            <select id="repeat">
+                <option value="daily">Diariamente</option>
+                <option value="weekly">Semanalmente</option>
+                <option value="monthly">Mensualmente</option>
+                <option value="yearly">Anualmente</option>
+                <option value="none">No repetir</option>
+            </select>
+
             <button type="submit">Agregar</button>
             <button type="button" onclick="hideForm()">Cancelar</button>
         </form>
@@ -133,11 +171,10 @@
                     <th>Urgencia</th>
                     <th>Fecha de Vencimiento</th>
                     <th>Notas</th>
-                    <th>Acción</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                <!-- Filas generadas dinámicamente por JavaScript -->
+            <tbody id="task-list">
             </tbody>
         </table>
     </div>
@@ -146,35 +183,36 @@
         let tasks = [];
 
         function renderTable() {
-            const tableBody = document.querySelector("#eisenhower-matrix tbody");
+            const tableBody = document.getElementById("task-list");
             tableBody.innerHTML = "";
 
             tasks.forEach((task, index) => {
                 const row = document.createElement("tr");
+                row.classList.add("task-row");
                 row.innerHTML = `
-                    <td>${task.task}</td>
+                    <td>${task.completed ? '<span class="task-completed">' + task.task + '</span>' : task.task}</td>
                     <td>${task.importance}</td>
                     <td>${task.urgency}</td>
                     <td>${task.dueDate}</td>
                     <td>${task.notes}</td>
-                    <td><button onclick="removeTask(${index})">Eliminar</button></td>
+                    <td class="task-actions">
+                        <button onclick="toggleComplete(${index})">${task.completed ? 'Desmarcar' : 'Marcar'} Completa</button>
+                        <button onclick="editTask(${index})">Editar</button>
+                        <button onclick="removeTask(${index})">Eliminar</button>
+                    </td>
                 `;
                 tableBody.appendChild(row);
             });
         }
 
-        function filterTasks(quadrant) {
-            const filteredTasks = tasks.filter(task => {
-                if (quadrant === 'I') {
-                    return task.importance === "Importante" && task.urgency === "Urgente";
-                } else if (quadrant === 'II') {
-                    return task.importance === "Importante" && task.urgency === "No urgente";
-                } else if (quadrant === 'III') {
-                    return task.importance === "No importante" && task.urgency === "Urgente";
-                } else if (quadrant === 'IV') {
-                    return task.importance === "No importante" && task.urgency === "No urgente";
-                }
-            });
+        function filter
+        function filterByImportance(importance) {
+            const filteredTasks = tasks.filter(task => task.importance === importance);
+            renderTable(filteredTasks);
+        }
+
+        function filterByUrgency(urgency) {
+            const filteredTasks = tasks.filter(task => task.urgency === urgency);
             renderTable(filteredTasks);
         }
 
@@ -190,9 +228,23 @@
             document.getElementById('task-form').style.display = 'none';
         }
 
+        function toggleComplete(index) {
+            tasks[index].completed = !tasks[index].completed;
+            renderTable();
+        }
+
         function removeTask(index) {
             tasks.splice(index, 1);
             renderTable();
+        }
+
+        function editTask(index) {
+            const task = tasks[index];
+            const newTaskName = prompt("Editar Tarea:", task.task);
+            if (newTaskName !== null) {
+                tasks[index].task = newTaskName;
+                renderTable();
+            }
         }
 
         document.getElementById('task-form').addEventListener('submit', function(event) {
@@ -203,10 +255,36 @@
             const urgency = document.getElementById('urgency').value;
             const dueDate = document.getElementById('due-date').value;
             const notes = document.getElementById('notes').value;
+            const repeat = document.getElementById('repeat').value;
 
-            tasks.push({ task: taskName, importance, urgency, dueDate, notes });
+            tasks.push({ task: taskName, importance, urgency, dueDate, notes, completed: false });
             renderTable();
             hideForm();
+
+            if (repeat !== "none") {
+                setInterval(() => {
+                    const now = new Date();
+                    const newDueDate = new Date(dueDate);
+                    switch (repeat) {
+                        case "daily":
+                            newDueDate.setDate(newDueDate.getDate() + 1);
+                            break;
+                        case "weekly":
+                            newDueDate.setDate(newDueDate.getDate() + 7);
+                            break;
+                        case "monthly":
+                            newDueDate.setMonth(newDueDate.getMonth() + 1);
+                            break;
+                        case "yearly":
+                            newDueDate.setFullYear(newDueDate.getFullYear() + 1);
+                            break;
+                    }
+                    if (newDueDate > now) {
+                        tasks.push({ task: taskName, importance, urgency, dueDate: newDueDate.toISOString().split('T')[0], notes, completed: false });
+                        renderTable();
+                    }
+                }, 1000 * 60 * 60 * 24);
+            }
         });
     </script>
 </body>
