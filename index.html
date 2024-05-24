@@ -101,14 +101,16 @@
             display: none;
         }
         .task-row:hover .task-actions {
-            display: block;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
         .task-actions button {
             background-color: transparent;
             color: white;
             border: none;
             cursor: pointer;
-            margin-left: 5px;
+            margin: 5px 0;
         }
         .task-actions button:hover {
             color: #3498db;
@@ -188,21 +190,21 @@
         let tasks = [];
 
         function renderTable() {
-            const tableBody =
- document.getElementById("task-list");
+            const tableBody = document.getElementById("task-list");
             tableBody.innerHTML = "";
 
             tasks.forEach((task, index) => {
                 const row = document.createElement("tr");
                 row.classList.add("task-row");
                 row.innerHTML = `
-                    <td>${task.completed ? '<span class="task-completed">' + task.task + '</span>' : task.task}</td>
+                    <td class="${task.completed ? 'task-completed' : ''}">${task.task}</td>
                     <td>${task.importance}</td>
                     <td>${task.urgency}</td>
                     <td>${task.dueDate}</td>
                     <td>${task.notes}</td>
                     <td class="task-actions">
-                        <button onclick="toggleComplete(${index})">${task.completed ? 'Desmarcar' : 'Marcar'} Completa</button>
+                        <button onclick="toggleComplete(${index})">${task.completed ? 'Marcar Incompleta' : 'Marcar Completa'}</
+button>
                         <button onclick="editTask(${index})">Editar</button>
                         <button onclick="removeTask(${index})">Eliminar</button>
                     </td>
@@ -239,7 +241,16 @@
         }
 
         function removeTask(index) {
-            tasks.splice(index, 1);
+            if (tasks[index].repeat !== "none") {
+                const confirmation = confirm("Esta tarea se repite en el tiempo. ¿Desea eliminar todas las tareas futuras relacionadas?");
+                if (confirmation) {
+                    tasks = tasks.filter((task, i) => i <= index || task.repeat === "none");
+                } else {
+                    tasks.splice(index, 1);
+                }
+            } else {
+                tasks.splice(index, 1);
+            }
             renderTable();
         }
 
@@ -248,6 +259,10 @@
             const newTaskName = prompt("Editar Tarea:", task.task);
             if (newTaskName !== null) {
                 tasks[index].task = newTaskName;
+                tasks[index].importance = prompt("Editar Importancia:", task.importance);
+                tasks[index].urgency = prompt("Editar Urgencia:", task.urgency);
+                tasks[index].dueDate = prompt("Editar Fecha de Vencimiento:", task.dueDate);
+                tasks[index].notes = prompt("Editar Notas:", task.notes);
                 renderTable();
             }
         }
@@ -260,34 +275,9 @@
             const notes = document.getElementById('notes').value;
             const repeat = document.getElementById('repeat').value;
 
-            tasks.push({ task: taskName, importance, urgency, dueDate, notes, completed: false });
+            tasks.push({ task: taskName, importance, urgency, dueDate, notes, completed: false, repeat });
             renderTable();
             hideForm();
-
-            if (repeat !== "none") {
-                setInterval(() => {
-                    const now = new Date();
-                    const newDueDate = new Date(dueDate);
-                    switch (repeat) {
-                        case "daily":
-                            newDueDate.setDate(newDueDate.getDate() + 1);
-                            break;
-                        case "weekly":
-                            newDueDate.setDate(newDueDate.getDate() + 7);
-                            break;
-                        case "monthly":
-                            newDueDate.setMonth(newDueDate.getMonth() + 1);
-                            break;
-                        case "yearly":
-                            newDueDate.setFullYear(newDueDate.getFullYear() + 1);
-                            break;
-                    }
-                    if (newDueDate > now) {
-                        tasks.push({ task: taskName, importance, urgency, dueDate: newDueDate.toISOString().split('T')[0], notes, completed: false });
-                        renderTable();
-                    }
-                }, 1000 * 60 * 60 * 24);
-            }
         }
     </script>
 </body>
